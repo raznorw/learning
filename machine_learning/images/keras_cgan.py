@@ -200,26 +200,28 @@ trained_gen = cond_gan.generator
 # between the interpolation + 2 (start and last images).
 num_interpolation = 9  # @param {type:"integer"}
 
-# Sample noise for the interpolation.
+# Sample noise for the interpolation.  
+# Using the same input noise, we interpolate between 2 different classes to get
+# a range of images that should morph from first_class to second_class
 interpolation_noise = tf.random.normal(shape=(1, latent_dim))
 interpolation_noise = tf.repeat(interpolation_noise, repeats=num_interpolation)
 interpolation_noise = tf.reshape(interpolation_noise, (num_interpolation, latent_dim))
 
 
-def interpolate_class(first_number, second_number):
+def interpolate_class(first_number, second_number):    
     # Convert the start and end labels to one-hot encoded vectors.
     first_label = keras.utils.to_categorical([first_number], num_classes)
     second_label = keras.utils.to_categorical([second_number], num_classes)
     first_label = tf.cast(first_label, tf.float32)
     second_label = tf.cast(second_label, tf.float32)
-
+    
     # Calculate the interpolation vector between the two labels.
     percent_second_label = tf.linspace(0, 1, num_interpolation)[:, None]
     percent_second_label = tf.cast(percent_second_label, tf.float32)
     interpolation_labels = (
         first_label * (1 - percent_second_label) + second_label * percent_second_label
     )
-
+    
     # Combine the noise and the labels and run inference with the generator.
     noise_and_labels = tf.concat([interpolation_noise, interpolation_labels], 1)
     fake = trained_gen.predict(noise_and_labels)
@@ -233,4 +235,24 @@ fake_images = interpolate_class(start_class, end_class)
 fake_images *= 255.0
 converted_images = fake_images.astype(np.uint8)
 converted_images = tf.image.resize(converted_images, (96, 96)).numpy().astype(np.uint8)
-imageio.mimsave("animation.gif", converted_images, fps=1)
+# imageio.mimsave("animation.gif", converted_images, duration=1000)
+import matplotlib.pyplot as plt
+plt.imshow(converted_images[0])
+plt.imshow(converted_images[4])
+plt.imshow(converted_images[8])
+
+def show_one(number):
+    interpolation_noise = tf.random.normal(shape=(1, latent_dim))
+    interpolation_labels = keras.utils.to_categorical([number], num_classes)
+    noise_and_labels     = tf.concat([interpolation_noise, interpolation_labels], 1)
+    fake = trained_gen.predict(noise_and_labels)
+    # fake will be (1,28,28,1), need to strip off batch dimension
+    plt.imshow(fake[0])    
+show_one(8)
+
+## cannot save cond_gan because forward pass is not defined
+## which makes sense, since it doesn't really make sense as a combined model
+# cond_gan.save("keras_cgan")
+cond_gan.generator.save("keras_cgan_generator")
+cond_gan.discriminator.save("keras_cgan_discriminator")
+
