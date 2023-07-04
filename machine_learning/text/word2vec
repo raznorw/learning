@@ -1,0 +1,26 @@
+https://www.tensorflow.org/tutorials/text/word2vec
+
+A family of model archiectures and optimizations used to learn word embeddings 
+from large datasets.
+
+ - Continuous bag-of-words - predicts middle words based on surrounding content words.
+     order of words in the context is not important
+ - continous skip-gram model - predict words within a certain range before and after the
+     current word in the same sentence.  ie, predicts context given word
+
+
+Optimizations:
+  Continuous Skip-gram attempts to learn a prob. dist. function that includes a full softmax
+over the entire vocabulary of words.  Noise Contrastive Estimation (NCE) is an efficient 
+approximation for a full softmax.  Since the goal is to learn word embeddings instead of
+modelings the word distribution, NCE loss can be simplified to use negative sampling.
+
+Useful Functions:
+  tf.nn.nce_loss - computes and returns the  noise-contrastive estimation training loss
+
+Note:
+  Using negative examples, [5,20] num_ns  works well for smaller datasets, and [2,5] for larger
+
+
+Tensorflow Embedding Projector:
+  https://projector.tensorflow.org/
